@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Customer Churn Predictor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+  <h1>Customer Churn Predictor</h1>
+  <p>Enter a telecom customer's details to find out whether they are likely to leave.</p>
+</header>
+
+<main>
+  {% if result %}
+  <section class="card result {{ result.css }}" id="result">
+    <h2>Prediction</h2>
+    <div class="label">{{ result.label }}</div>
+    <div>Churn probability: <strong>{{ result.percent }}%</strong></div>
+    <div class="bar"><span style="width: {{ result.percent }}%"></span></div>
+    <p>{{ result.message }}</p>
+  </section>
+  {% endif %}
+
+  <form class="card" method="post" action="{{ url_for('predict') }}" novalidate>
+    <h2>Customer details</h2>
+    {% if errors %}
+    <div class="banner">Please fix the highlighted fields and try again.</div>
+    {% endif %}
+
+    {% for title, fields in sections %}
+    <fieldset>
+      <legend>{{ title }}</legend>
+      <div class="grid">
+        {% for name in fields %}
+        <div class="{{ 'field-error' if name in errors }}">
+          {% if name in numbers %}
+            <label for="{{ name }}">{{ numbers[name] }}</label>
+            <input type="number" id="{{ name }}" name="{{ name }}" value="{{ values[name] }}"
+                   step="{{ '1' if name == 'tenure' else '0.01' }}" min="0"
+                   {% if name == 'TotalCharges' %}placeholder="auto: tenure x monthly"{% endif %}>
+          {% else %}
+            <label for="{{ name }}">{{ choices[name][0] }}</label>
+            <select id="{{ name }}" name="{{ name }}">
+              {% for option in choices[name][1] %}
+              <option value="{{ option }}" {{ 'selected' if values[name] == option }}>{{ option }}</option>
+              {% endfor %}
+            </select>
+          {% endif %}
+          {% if name in errors %}<div class="msg-error">{{ errors[name] }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% endfor %}
+
+    <button type="submit">Predict churn</button>
+  </form>
+</main>
+
+<footer>
+  Model: Random Forest &middot; test accuracy {{ '%.1f' % (metrics.accuracy * 100) }}%
+  &middot; recall {{ '%.1f' % (metrics.recall * 100) }}% &middot; F1 {{ '%.2f' % metrics.f1 }}<br>
+  Predictions are estimates and can be wrong.
+</footer>
+</body>
+</html>
